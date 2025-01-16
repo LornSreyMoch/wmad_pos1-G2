@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 // In-memory product database
@@ -30,60 +31,53 @@ export async function GET(request: NextRequest) {
 }
 
 
-// export async function PUT(request: NextRequest) {
-//   const body = await request.json();
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  const { id } = params;
 
-//   const { id, nameEn, nameKh, category, sku, image } = body;
+  try {
+    // Parse the request body
+    const body = await request.json();
+    const { nameEn, nameKh, categoryId, sku, imageUrl } = body;
 
-//   if (!id || !nameEn || !category || !sku) {
-//     return NextResponse.json({
-//       success: false,
-//       error: "Missing required fields: 'id', 'nameEn', 'category', 'sku'",
-//     });
-//   }
+    // Update the product in the database
+    const updateProduct = await prisma.product.update({
+      where: { id: parseInt(id) },
+      data: {
+        nameEn,
+        nameKh,
+        categoryId,
+        sku,
+        imageUrl,
+      },
+    });
 
-//   // Check if the product exists
-//   if (!productDatabase[id]) {
-//     return NextResponse.json({
-//       success: false,
-//       error: "Product not found",
-//     });
-//   }
-
-//   // Update the product in the database
-//   productDatabase[id] = { id, nameEn, nameKh, category, sku, image };
-
-//   return NextResponse.json({
-//     success: true,
-//     message: "Product updated successfully",
-//     product: productDatabase[id],
-//   });
-// }
+    // Return the updated product
+    return NextResponse.json({
+      message: "Product updated successfully!",
+      product: updateProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to update product", details: (error as Error).message },
+      { status: 400 }
+    );
+  }
+}
 
 
-// // DELETE: Remove a product by ID
-// export async function DELETE(request: NextRequest) {
-//   const id = request.nextUrl.searchParams.get("id");
 
-//   if (!id) {
-//     return NextResponse.json({
-//       success: false,
-//       error: "Missing 'id' query parameter",
-//     });
-//   }
+// DELETE: Remove a product by ID
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const { id } = params;
 
-//   if (!productDatabase[id]) {
-//     return NextResponse.json({
-//       success: false,
-//       error: "Product not found",
-//     });
-//   }
+  try {
+    await prisma.product.delete({
+      where: { id: parseInt(id) },
+    });
 
-//   // Remove the product from the database
-//   delete productDatabase[id];
-
-//   return NextResponse.json({
-//     success: true,
-//     message: "Product deleted successfully",
-//   });
-// }
+    return NextResponse.json({ message: "Product deleted successfully!" });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to delete product " })
+  }
+}

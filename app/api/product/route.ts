@@ -1,7 +1,10 @@
+import { getSession } from "@/app/auth/stateless-session";
+import { AppInfoContext } from "@/components/app-wrapper";
 import prisma from "@/lib/prisma";
 import { ProductModel } from "@/models/api/productModel";
 import { getPaginatedProducts } from "@/services/productServices";
 import { NextRequest, NextResponse } from "next/server";
+import { useContext } from "react";
 
 // GET Handler: Fetch paginated products
 export async function GET(req: NextRequest) {
@@ -24,56 +27,66 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// POST Handler: Add a new product
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json();
+    const sessoin = await getSession()
+    console.log("------- q", sessoin)
+    if(!sessoin){
+      return NextResponse.json("Unauthorized", {status: 401})
+    }
+    // Get the last product to generate the next productCode
+    const lastProduct = await prisma.product.findFirst({
+      orderBy: { productCode: "desc" },
+    });
 
-// // POST Handler: Add a new product
-// export async function POST(request: NextRequest) {
-//   const body = await request.json();
+    let newProductCode = "P0001"; // Default product code if no products exist
 
-//   // Destructure and check required fields
-//   const { nameEn, nameKh, category, sku, image } = body;
+    if (lastProduct) {
+      const lastProductCodeNumber = parseInt(
+        lastProduct.productCode.replace("P", ""),
+        10
+      );
+      const nextProductCodeNumber = lastProductCodeNumber + 1;
 
-//   // Check if all required fields are present
-//   if (!nameEn || !category || !sku) {
-//     return NextResponse.json({
-//       success: false,
-//       error: "Missing required fields: 'nameEn', 'category', 'sku'",
-//     });
-//   }
+      newProductCode = `P${nextProductCodeNumber.toString().padStart(4, "0")}`;
+    }
 
-//   try {
-//     // Check if the product already exists (based on SKU or some unique identifier)
-//     const existingProduct = await prisma.product.findUnique({
-//       where: { sku }, // Assuming 'sku' is unique
-//     });
+    const product = await prisma.product.create({
+      data: {
+        productCode: newProductCode,
+        nameEn: data.nameEn,
+        nameKh: data.nameKh,
+        categoryId: parseInt(data.categoryId),
+        sku: data.sku,
+        imageUrl: data.imageUrl,
+        createdBy: sessoin.userId,
+        updatedBy: sessoin.userId,
+      },
+    });
 
-//     if (existingProduct) {
-//       return NextResponse.json({
-//         success: false,
-//         error: "Product with this SKU already exists",
-//       });
-//     }
+    const resData: ProductModel = {
+      id: product.id,
+      productCode: newProductCode,
+      nameEn: product.nameEn,
+      nameKh: product.nameKh || "",
+      categoryId: product.categoryId,
+      imageUrl: data.imageUrl,
+      sku: product.sku || "",
+      createdBy: sessoin.userId,
+      updatedBy: sessoin.userId,
+    };
+    return NextResponse.json({ message: "Product created successfully", data: resData });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to add product",
+      },
+      { status: 500 }
+    );
+  }
+}
 
-//     // Add the new product to the database
-//     const newProduct = await prisma.product.create({
-//       data: {
-//         nameEn,
-//         nameKh,
-//         category: { connect: { id: category } }, // Assuming category is a reference (ID)
-//         sku,
-//         imageUrl: image, // Corrected to reference 'image' from request body
-//       },
-//     });
-
-//     return NextResponse.json({
-//       success: true,
-//       message: "Product added successfully",
-//       product: newProduct,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     return NextResponse.json({
-//       success: false,
-//       error: "Failed to add product",
-//     }, { status: 500 });
-//   }
-// }

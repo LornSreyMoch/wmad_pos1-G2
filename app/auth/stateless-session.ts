@@ -4,6 +4,7 @@ import type { SessionPayload } from "@/app/auth/definitions";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { Cookie } from "lucide-react";
 
 const secretKey = process.env.SECRET;
 const key = new TextEncoder().encode(secretKey);
@@ -76,6 +77,17 @@ export async function updateSession() {
     sameSite: "lax",
     path: "/",
   });
+}
+
+export async function getSession() {
+  const session = cookies().get("session")?.value;
+  const payload = await decrypt(session);
+
+  if(!payload?.userId){
+    return null
+  }
+
+  return {isAuth: true, userId: Number(payload.userId)}
 }
 
 export function deleteSession() {

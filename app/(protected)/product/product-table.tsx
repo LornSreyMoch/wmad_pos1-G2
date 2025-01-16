@@ -82,7 +82,7 @@ export const ProductTableView: React.FC<Props> = ({ title, data }) => {
               >
                 <td className="py-4 px-6 border-b">{item.nameEn}</td>
                 <td className="py-4 px-6 border-b">{item.nameKh}</td>
-                <td className="py-4 px-6 border-b">Food</td>
+                <td className="py-4 px-6 border-b">{item.categoryId}</td>
                 <td className="py-4 px-6 border-b">{getSku(index)}</td>
                 <td className="py-4 px-6 border-b">
                   <img
@@ -102,7 +102,7 @@ export const ProductTableView: React.FC<Props> = ({ title, data }) => {
         onPrevClick={handlePrevClick}
         onNextClick={handleNextClick}
         onPageClick={handlePageClick}
-        path="/stockin"
+        path="/product"
         data={paginatedData}
       />
     </div>

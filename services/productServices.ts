@@ -29,7 +29,7 @@ export const getPaginatedProducts= async ({ pageSize = 10, currentPage = 1 }: { 
                 id: item.id,
                 nameEn: item.nameEn,
                 nameKh: item.nameKh??"",
-                category: item.category, // Assuming category has nameEn
+                categoryId: item.category.nameEn, // Assuming category has nameEn
                 sku: item.sku,
                 imageUrl: item.imageUrl??"",}
         }),
